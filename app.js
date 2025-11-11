@@ -18,7 +18,8 @@ Extract first relevant link
 */
 function extractRelevantLink(text) {
   if (!text) return null;
-  const matches = text.match(LINK_PATTERN);
+  const cleanedText = text.replace(/<([^>|]+)(?:\|[^>]+)?>/g, '$1');
+  const matches = cleanedText.match(LINK_PATTERN);
   return matches ? matches[0] : null;
 }
 
