@@ -1,5 +1,7 @@
 const { App, LogLevel } = require('@slack/bolt');
 const config = require('./config');
+const logger = require('./logger');
+
 const app = new App({
   token: config.botToken,
   signingSecret: config.signingSecret,
@@ -23,15 +25,29 @@ function extractRelevantLink(text) {
   return matches ? matches[0] : null;
 }
 
-async function getMessageLink(client, channel, ts) {
-  const res = await client.chat.getPermalink({ channel, message_ts: ts });
-  return res.permalink;
+function formatForwardMessage({ link, message, sender, channel }) {
+  return `
+          :link: *Link detected*
+          • *Link:* ${link}
+          • *Message:* ${message}
+          • *Sender:* ${sender}
+          • *Channel:* <#${channel}>
+`;
 }
 
-function formatForwardMessage({ link, messageLink }) {
-  return `:link: *Link detected*
-• *Link:* ${link}
-• *Message:* ${messageLink}`;
+async function getUserDetails(client, userId) {
+  try {
+    const { user } = await client.users.info({ user: userId });
+    const profile = user?.profile || {};
+    return {
+      name: profile.real_name || user.real_name || user.name || 'Unnamed User',
+      email: profile.email || 'No email available',
+      isBot: user.is_bot || false,
+    };
+  } catch (error) {
+    logger.warn(`Could not fetch user info for ${userId}:`, error.data?.error || error.message);
+    return { name: 'Unknown User', email: 'Unknown Email', isBot: false };
+  }
 }
 
 app.event('message', async ({ event, client }) => {
@@ -39,20 +55,22 @@ app.event('message', async ({ event, client }) => {
     if (!event.text || event.subtype === 'bot_message') return;
     const foundLink = extractRelevantLink(event.text);
     if (!foundLink) return;
-  
+
     if (recentLinks.has(foundLink)) return;
-  
-    const messagePermalink = await getMessageLink(client, event.channel, event.ts);
-   
+
+    const { name: userName } = await getUserDetails(client, event.user);
+
     await client.chat.postMessage({
       channel: config.targetChannel,
       text: formatForwardMessage({
         link: foundLink,
-        messageLink: messagePermalink,
+        message: event.text,
+        sender: userName,
+        channel: event.channel,
       }),
     });
-    console.log(`Forwarded link: ${foundLink}`);
-   
+    logger.info(`Forwarded link: ${foundLink}`);
+
     recentLinks.add(foundLink);
     if (recentLinks.size > MAX_CACHE_SIZE) {
       const [oldest] = recentLinks;
@@ -64,5 +82,5 @@ app.event('message', async ({ event, client }) => {
 });
 (async () => {
   await app.start(config.port || 3000);
-  console.log(' Link Tracking Bot is running...');
+  logger.info(' Link Tracking Bot is running...');
 })();
