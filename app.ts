@@ -1,6 +1,6 @@
-const { App, LogLevel } = require('@slack/bolt');
-const config = require('./config');
-const logger = require('./logger');
+import { App, LogLevel } from '@slack/bolt';
+import config from './config';
+import logger from './logger';
 
 const app = new App({
   token: config.botToken,
@@ -12,20 +12,29 @@ const app = new App({
 
 const LINK_PATTERN =
   /(https?:\/\/(?:chat\.whatsapp\.com|wa\.me|meet\.google\.com|(?:[a-z0-9.-]+\.)?zoom\.us|teams\.microsoft\.com)[^\s]*)/gi;
-const recentLinks = new Set();
+const recentLinks = new Set<string>();
 const MAX_CACHE_SIZE = 200;
-/**
-Extract first relevant link
-@param {string} text
-*/
-function extractRelevantLink(text) {
-  if (!text) return null;
+
+interface ForwardMessageParams {
+  link: string;
+  message: string;
+  sender: string;
+  channel: string;
+}
+
+interface UserDetails {
+  name: string;
+  email: string;
+  isBot: boolean;
+}
+
+function extractRelevantLink(text: string): string | null {
   const cleanedText = text.replace(/<([^>|]+)(?:\|[^>]+)?>/g, '$1');
   const matches = cleanedText.match(LINK_PATTERN);
   return matches ? matches[0] : null;
 }
 
-function formatForwardMessage({ link, message, sender, channel }) {
+function formatForwardMessage({ link, message, sender, channel }: ForwardMessageParams): string {
   return `
           :link: *Link detected*
           • *Link:* ${link}
@@ -35,24 +44,28 @@ function formatForwardMessage({ link, message, sender, channel }) {
 `;
 }
 
-async function getUserDetails(client, userId) {
+async function getUserDetails(
+  client: InstanceType<typeof App>['client'],
+  userId: string,
+): Promise<UserDetails> {
   try {
     const { user } = await client.users.info({ user: userId });
     const profile = user?.profile || {};
     return {
-      name: profile.real_name || user.real_name || user.name || 'Unnamed User',
+      name: profile.real_name || user?.real_name || user?.name || 'Unnamed User',
       email: profile.email || 'No email available',
-      isBot: user.is_bot || false,
+      isBot: user?.is_bot || false,
     };
-  } catch (error) {
-    logger.warn(`Could not fetch user info for ${userId}:`, error.data?.error || error.message);
+  } catch (error: unknown) {
+    const err = error as { data?: { error?: string }; message?: string };
+    logger.warn(`Could not fetch user info for ${userId}:`, err.data?.error || err.message);
     return { name: 'Unknown User', email: 'Unknown Email', isBot: false };
   }
 }
 
 app.event('message', async ({ event, client }) => {
   try {
-    if (!event.text || event.subtype === 'bot_message') return;
+    if (!('text' in event) || !event.text || event.subtype) return;
     const foundLink = extractRelevantLink(event.text);
     if (!foundLink) return;
 
@@ -76,10 +89,12 @@ app.event('message', async ({ event, client }) => {
       const [oldest] = recentLinks;
       recentLinks.delete(oldest);
     }
-  } catch (error) {
-    console.error('Error handling message event:', error);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error handling message event:', err);
   }
 });
+
 (async () => {
   await app.start(config.port || 3000);
   logger.info(' Link Tracking Bot is running...');

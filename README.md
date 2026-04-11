@@ -31,6 +31,7 @@ A Slack bot built with Node.js and [Bolt](https://slack.dev/bolt/) that automati
 ## Getting Started
 
 1. **Clone the repository**
+
 ```bash
 git clone https://github.com/adelosoye-dev/slack-link-bot.git
 cd slack-link-bot
@@ -45,3 +46,4 @@ cd slack-link-bot
 to be continued....
 
 
+```
