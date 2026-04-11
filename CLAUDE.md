@@ -11,6 +11,9 @@ Slack bot (TypeScript + Bolt framework) that monitors channels for links (WhatsA
 - `pnpm build` — compile TypeScript to `dist/`
 - `pnpm start` — run the compiled bot (`node dist/app.js`)
 - `pnpm dev` — run directly via ts-node
+- `pnpm lint` — ESLint (fix with `pnpm lint:fix`)
+- `pnpm format:check` — Prettier check (fix with `pnpm format`)
+- `pnpm typecheck` — type-check without emitting
 - No test suite configured yet
 
 ## Architecture
@@ -25,4 +28,4 @@ Required in `.env`: `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `SLACK_SIGNING_SECRET`
 
 ## Deployment
 
-CI/CD via GitHub Actions (`.github/workflows/deploy.yml`). On merged PR to `main`, deploys via SSH and restarts with `pm2`. Uses pnpm.
+CI/CD via GitHub Actions (`.github/workflows/deploy.yml`). PR checks run lint, format, typecheck in parallel, then build. On merged PR to `main`, deploys via SSH and restarts with `pm2`. Uses pnpm.

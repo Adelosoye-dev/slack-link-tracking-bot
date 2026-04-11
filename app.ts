@@ -44,7 +44,10 @@ function formatForwardMessage({ link, message, sender, channel }: ForwardMessage
 `;
 }
 
-async function getUserDetails(client: InstanceType<typeof App>['client'], userId: string): Promise<UserDetails> {
+async function getUserDetails(
+  client: InstanceType<typeof App>['client'],
+  userId: string,
+): Promise<UserDetails> {
   try {
     const { user } = await client.users.info({ user: userId });
     const profile = user?.profile || {};

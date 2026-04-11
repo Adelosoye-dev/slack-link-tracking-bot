@@ -11,7 +11,7 @@ const logFormat = winston.format.combine(
     }
     if (Object.keys(metadata).length > 0) {
       const filteredMetadata = Object.keys(metadata)
-        .filter(key => !['timestamp', 'level', 'message', 'stack'].includes(key))
+        .filter((key) => !['timestamp', 'level', 'message', 'stack'].includes(key))
         .reduce<Record<string, unknown>>((obj, key) => {
           obj[key] = metadata[key];
           return obj;
@@ -21,7 +21,7 @@ const logFormat = winston.format.combine(
       }
     }
     return msg;
-  })
+  }),
 );
 
 const consoleFormat = winston.format.combine(
@@ -31,7 +31,7 @@ const consoleFormat = winston.format.combine(
     let msg = `${timestamp} [${level}] ${message}`;
     if (Object.keys(metadata).length > 0) {
       const filteredMetadata = Object.keys(metadata)
-        .filter(key => !['timestamp', 'level', 'message'].includes(key))
+        .filter((key) => !['timestamp', 'level', 'message'].includes(key))
         .reduce<Record<string, unknown>>((obj, key) => {
           obj[key] = metadata[key];
           return obj;
@@ -41,7 +41,7 @@ const consoleFormat = winston.format.combine(
       }
     }
     return msg;
-  })
+  }),
 );
 
 const logger: winston.Logger = winston.createLogger({
