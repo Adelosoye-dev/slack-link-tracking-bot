@@ -5,6 +5,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/app.js",
+    "start:pm2": "pm2 start dist/app.js --name slack-link-bot",
+    "stop:pm2": "pm2 stop slack-link-bot",
+    "restart:pm2": "pm2 restart slack-link-bot",
     "dev": "ts-node app.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
